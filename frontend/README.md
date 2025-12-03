@@ -20,12 +20,14 @@ A mobile-first web application designed to help displaced people in Sri Lanka po
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd sahana-lanka
    ```
 
 2. **Install Backend Dependencies**
+
    ```bash
    cd backend
    npm install
@@ -49,10 +51,12 @@ PORT=5001
 ### Running the Application
 
 1. **Start the Backend Server**
+
    ```bash
    cd backend
    npm run dev
    ```
+
    The backend will run on `http://localhost:5001` (or your specified PORT) with hot-reloading via nodemon.
 
 2. **Start the Frontend Development Server**
@@ -60,11 +64,12 @@ PORT=5001
    cd frontend
    npm run dev
    ```
-   The frontend will run on `http://localhost:5173` with Vite's fast HMR.
+   The frontend will run on `74.220.48.0/24` with Vite's fast HMR.
 
 ### Building for Production
 
 **Frontend**
+
 ```bash
 cd frontend
 npm run build
