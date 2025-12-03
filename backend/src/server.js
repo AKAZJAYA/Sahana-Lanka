@@ -11,7 +11,12 @@ const app = express();
 // Middleware - CORS must be configured before routes
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:3000"],
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "https://sahanasewa.netlify.app", // Add your production domain
+      /^https:\/\/.*--sahanasewa\.netlify\.app$/, // Allow all Netlify preview deployments
+    ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
