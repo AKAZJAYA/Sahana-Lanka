@@ -580,7 +580,7 @@ const App = () => {
             {/* Bottom Bar */}
             <div className="border-t border-gray-700 pt-8 text-center">
               <p className="text-base text-gray-400 mb-3">
-                Built with{" "}
+                Built with  VA Solutions{" "}
                 <span className="text-red-500 text-xl">❤️</span> to help
                 communities in need
               </p>
@@ -593,12 +593,12 @@ const App = () => {
               </p>
             </div>
           </div>
-          <div className="border-t border-gray-700 pt-6 text-center">
+          {/* <div className="border-t border-gray-700 pt-6 text-center">
             <p className="text-sm">Built with ❤️ VA Solutions</p>
             <p className="text-xs mt-2 text-gray-400">
               Sahana Sewa © {new Date().getFullYear()}
             </p>
-          </div>
+          </div> */}
         </div>
       </footer>
     </div>
