@@ -1,67 +1,67 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import axios from "axios";
 
-const NeedForm = () => {
+const NeedForm = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    location: '',
-    items: [{ name: '', quantity: '' }],
-    description: ''
+    name: "",
+    phone: "",
+    location: "",
+    items: [{ name: "", quantity: "" }],
+    description: "",
   });
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...formData.items];
     updatedItems[index][field] = value;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      items: updatedItems
+      items: updatedItems,
     }));
   };
 
   const addItem = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      items: [...prev.items, { name: '', quantity: '' }]
+      items: [...prev.items, { name: "", quantity: "" }],
     }));
   };
 
   const removeItem = (index) => {
     if (formData.items.length > 1) {
       const updatedItems = formData.items.filter((_, i) => i !== index);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        items: updatedItems
+        items: updatedItems,
       }));
     }
   };
 
   const validateForm = () => {
     // Check if at least one item has a name
-    const hasValidItem = formData.items.some(item => item.name.trim() !== '');
-    
+    const hasValidItem = formData.items.some((item) => item.name.trim() !== "");
+
     if (!hasValidItem) {
-      setErrorMessage('Please add at least one item with a name');
+      setErrorMessage("Please add at least one item with a name");
       return false;
     }
 
     // Filter out empty items
-    const validItems = formData.items.filter(item => item.name.trim() !== '');
-    
+    const validItems = formData.items.filter((item) => item.name.trim() !== "");
+
     if (validItems.length === 0) {
-      setErrorMessage('Please add at least one item with a name');
+      setErrorMessage("Please add at least one item with a name");
       return false;
     }
 
@@ -70,8 +70,8 @@ const NeedForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMessage('');
-    setSuccessMessage('');
+    setErrorMessage("");
+    setSuccessMessage("");
 
     if (!validateForm()) {
       return;
@@ -81,14 +81,16 @@ const NeedForm = () => {
 
     try {
       // Filter out items with empty names
-      const validItems = formData.items.filter(item => item.name.trim() !== '');
-      
+      const validItems = formData.items.filter(
+        (item) => item.name.trim() !== ""
+      );
+
       const submitData = {
         ...formData,
-        items: validItems.map(item => ({
+        items: validItems.map((item) => ({
           name: item.name.trim(),
-          quantity: item.quantity.trim() || 'N/A'
-        }))
+          quantity: item.quantity.trim() || "N/A",
+        })),
       };
 
       // Remove empty optional fields
@@ -97,26 +99,32 @@ const NeedForm = () => {
       if (!submitData.location.trim()) delete submitData.location;
       if (!submitData.description.trim()) delete submitData.description;
 
-      await axios.post('http://localhost:5000/api/needs', submitData);
+      await axios.post("/api/needs", submitData);
 
-      setSuccessMessage('✅ Your need has been posted successfully!');
-      
+      setSuccessMessage("✅ Your need has been posted successfully!");
+
       // Clear form
       setFormData({
-        name: '',
-        phone: '',
-        location: '',
-        items: [{ name: '', quantity: '' }],
-        description: ''
+        name: "",
+        phone: "",
+        location: "",
+        items: [{ name: "", quantity: "" }],
+        description: "",
       });
 
+      // Call onSuccess callback if provided (switches to view tab)
+      if (onSuccess) {
+        setTimeout(() => {
+          onSuccess();
+        }, 1500);
+      }
+
       // Clear success message after 5 seconds
-      setTimeout(() => setSuccessMessage(''), 5000);
+      setTimeout(() => setSuccessMessage(""), 5000);
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error("Error submitting form:", error);
       setErrorMessage(
-        error.response?.data?.message || 
-        'Failed to submit. Please try again.'
+        error.response?.data?.message || "Failed to submit. Please try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -146,7 +154,10 @@ const NeedForm = () => {
 
         {/* Name */}
         <div>
-          <label htmlFor="name" className="block text-lg font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="name"
+            className="block text-lg font-medium text-gray-700 mb-2"
+          >
             Your Name (Optional)
           </label>
           <input
@@ -162,7 +173,10 @@ const NeedForm = () => {
 
         {/* Phone */}
         <div>
-          <label htmlFor="phone" className="block text-lg font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="phone"
+            className="block text-lg font-medium text-gray-700 mb-2"
+          >
             Phone Number (Optional)
           </label>
           <input
@@ -178,7 +192,10 @@ const NeedForm = () => {
 
         {/* Location */}
         <div>
-          <label htmlFor="location" className="block text-lg font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="location"
+            className="block text-lg font-medium text-gray-700 mb-2"
+          >
             Location (Optional)
           </label>
           <input
@@ -203,14 +220,18 @@ const NeedForm = () => {
                 <input
                   type="text"
                   value={item.name}
-                  onChange={(e) => handleItemChange(index, 'name', e.target.value)}
+                  onChange={(e) =>
+                    handleItemChange(index, "name", e.target.value)
+                  }
                   className="flex-1 px-4 py-3 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Item name (e.g., Rice)"
                 />
                 <input
                   type="text"
                   value={item.quantity}
-                  onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                  onChange={(e) =>
+                    handleItemChange(index, "quantity", e.target.value)
+                  }
                   className="w-32 px-4 py-3 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Qty"
                 />
@@ -237,7 +258,10 @@ const NeedForm = () => {
 
         {/* Description */}
         <div>
-          <label htmlFor="description" className="block text-lg font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="description"
+            className="block text-lg font-medium text-gray-700 mb-2"
+          >
             Additional Details (Optional)
           </label>
           <textarea
@@ -257,7 +281,7 @@ const NeedForm = () => {
           disabled={isSubmitting}
           className="w-full px-6 py-4 text-lg font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? 'Submitting...' : 'Submit Need'}
+          {isSubmitting ? "Submitting..." : "Submit Need"}
         </button>
       </form>
     </div>

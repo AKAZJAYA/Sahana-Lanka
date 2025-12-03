@@ -8,8 +8,14 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// Middleware - CORS must be configured before routes
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "http://localhost:3000"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // MongoDB connection
