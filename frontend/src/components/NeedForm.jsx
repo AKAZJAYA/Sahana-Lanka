@@ -248,7 +248,7 @@ const NeedForm = ({ onSuccess }) => {
               Items Needed <span className="text-red-500">*</span>
             </label>
             {formData.items.map((item, index) => (
-              <div key={index} className="flex gap-2 mb-2">
+              <div key={index} className="flex flex-col sm:flex-row gap-2 mb-2">
                 <input
                   type="text"
                   value={item.name}
@@ -259,24 +259,26 @@ const NeedForm = ({ onSuccess }) => {
                   placeholder="Item name (e.g., Rice)"
                   required
                 />
-                <input
-                  type="text"
-                  value={item.quantity}
-                  onChange={(e) =>
-                    handleItemChange(index, "quantity", e.target.value)
-                  }
-                  className="w-32 px-4 py-3 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Qty"
-                />
-                {formData.items.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeItem(index)}
-                    className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                  >
-                    ✕
-                  </button>
-                )}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={item.quantity}
+                    onChange={(e) =>
+                      handleItemChange(index, "quantity", e.target.value)
+                    }
+                    className="flex-1 sm:w-32 px-4 py-3 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Qty"
+                  />
+                  {formData.items.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
             <button
