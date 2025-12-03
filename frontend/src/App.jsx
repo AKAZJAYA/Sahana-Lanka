@@ -580,8 +580,9 @@ const App = () => {
             {/* Bottom Bar */}
             <div className="border-t border-gray-700 pt-8 text-center">
               <p className="text-base text-gray-400 mb-3">
-                Built with{" "}
-                <span className="text-red-500 text-xl">❤️</span> VA Solutions
+                Built with  VA Solutions{" "}
+                <span className="text-red-500 text-xl">❤️</span> to help
+                communities in need
               </p>
               <p className="text-sm text-gray-500 mb-2">
                 Sahana Sewa © {new Date().getFullYear()} • Sri Lanka Flood Relief
@@ -592,6 +593,12 @@ const App = () => {
               </p>
             </div>
           </div>
+          {/* <div className="border-t border-gray-700 pt-6 text-center">
+            <p className="text-sm">Built with ❤️ VA Solutions</p>
+            <p className="text-xs mt-2 text-gray-400">
+              Sahana Sewa © {new Date().getFullYear()}
+            </p>
+          </div> */}
         </div>
       </footer>
     </div>
