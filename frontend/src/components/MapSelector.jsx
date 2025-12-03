@@ -113,8 +113,9 @@ const MapSelector = ({ onLocationSelect, initialLocation }) => {
   // Handle map click
   const handleMapClick = ({ lat, lng }) => {
     setPosition({ lat, lng });
+    setShowResults(false); // Close search results when clicking map
 
-    // Try to get address using reverse geocoding (optional)
+    // Try to get address using reverse geocoding
     fetch(
       `https://nominatim.openstreetmap.org/reverse?` +
       `format=json&lat=${lat}&lon=${lng}&` +
@@ -132,46 +133,60 @@ const MapSelector = ({ onLocationSelect, initialLocation }) => {
       });
   };
 
+  // Close results when clicking outside
+  const handleBlur = () => {
+    // Delay to allow click events on results to fire first
+    setTimeout(() => {
+      setShowResults(false);
+    }, 200);
+  };
+
   return (
     <div className="space-y-4">
-      {/* Search Box */}
-      <div className="relative">
+      {/* Search Box - Higher z-index */}
+      <div className="relative z-[1000]">
         <div className="relative">
           <input
             type="text"
             value={searchQuery}
             onChange={handleSearchInput}
             onFocus={() => searchResults.length > 0 && setShowResults(true)}
+            onBlur={handleBlur}
             placeholder="Search for a location (e.g., Colombo Fort, Galle Road)"
             className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
           />
-          {isSearching && (
-            <div className="absolute right-3 top-3">
+          {isSearching && !searchQuery.includes('✕') && (
+            <div className="absolute right-3 top-3 pointer-events-none">
               <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
             </div>
           )}
-          {searchQuery && (
+          {searchQuery && !isSearching && (
             <button
+              type="button"
               onClick={() => {
                 setSearchQuery('');
                 setSearchResults([]);
                 setShowResults(false);
               }}
-              className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 z-10"
             >
               ✕
             </button>
           )}
         </div>
 
-        {/* Search Results Dropdown */}
+        {/* Search Results Dropdown - Positioned above map */}
         {showResults && searchResults.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          <div className="absolute w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto z-[1001]">
             {searchResults.map((result, index) => (
               <button
                 key={index}
-                onClick={() => handleSelectResult(result)}
-                className="w-full px-4 py-3 text-left hover:bg-gray-100 border-b border-gray-100 last:border-b-0"
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault(); // Prevent blur
+                  handleSelectResult(result);
+                }}
+                className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors"
               >
                 <div className="text-sm font-medium text-gray-900">
                   {result.display_name.split(',')[0]}
@@ -185,8 +200,8 @@ const MapSelector = ({ onLocationSelect, initialLocation }) => {
         )}
 
         {showResults && searchResults.length === 0 && searchQuery && !isSearching && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4">
-            <p className="text-sm text-gray-500">No results found</p>
+          <div className="absolute w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl p-4 z-[1001]">
+            <p className="text-sm text-gray-500">No results found for "{searchQuery}"</p>
           </div>
         )}
       </div>
@@ -194,16 +209,17 @@ const MapSelector = ({ onLocationSelect, initialLocation }) => {
       {/* Current Location Display */}
       {position && (
         <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
-          <span className="font-medium">Coordinates:</span> {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
+          <span className="font-medium">📍 Coordinates:</span> {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
         </div>
       )}
 
-      {/* Map Container */}
-      <div className="w-full h-[400px] rounded-lg overflow-hidden border-2 border-gray-300 shadow-sm">
+      {/* Map Container - Lower z-index */}
+      <div className="w-full h-[400px] rounded-lg overflow-hidden border-2 border-gray-300 shadow-sm relative z-0">
         <MapContainer
           center={[position.lat, position.lng]}
           zoom={13}
           style={{ height: '100%', width: '100%' }}
+          zoomControl={true}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -218,12 +234,13 @@ const MapSelector = ({ onLocationSelect, initialLocation }) => {
       </div>
 
       {/* Instructions */}
-      <div className="text-xs text-gray-500 space-y-1">
-        <p>💡 <strong>Tips:</strong></p>
+      <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded-lg space-y-1">
+        <p className="font-medium text-blue-900">💡 How to use:</p>
         <ul className="list-disc list-inside ml-2 space-y-1">
-          <li>Search for a location using the search box above</li>
+          <li>Type a location name in the search box to find it</li>
+          <li>Click on a search result to select that location</li>
           <li>Or click anywhere on the map to select a location</li>
-          <li>The marker will show your selected location</li>
+          <li>The blue marker shows your selected location</li>
         </ul>
       </div>
     </div>
