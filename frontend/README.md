@@ -43,7 +43,7 @@ Create a `.env` file in the [`backend`](backend) directory with the following va
 
 ```env
 MONGODB_URI=your_mongodb_connection_string
-PORT=5000
+PORT=5001
 ```
 
 ### Running the Application
@@ -53,7 +53,7 @@ PORT=5000
    cd backend
    npm run dev
    ```
-   The backend will run on `http://localhost:5000` (or your specified PORT) with hot-reloading via nodemon.
+   The backend will run on `http://localhost:5001` (or your specified PORT) with hot-reloading via nodemon.
 
 2. **Start the Frontend Development Server**
    ```bash
