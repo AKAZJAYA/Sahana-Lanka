@@ -3,32 +3,16 @@ import axios from "axios";
 import NeedCard from "./NeedCard";
 
 const NeedList = () => {
-  const [needs, setNeeds] = useState([]);
+  const [allNeeds, setAllNeeds] = useState([]); // Store all fetched needs
+  const [filteredNeeds, setFilteredNeeds] = useState([]); // Display filtered needs
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all"); // 'all', 'urgent', 'supplied'
+  const [filterStatus, setFilterStatus] = useState("all");
   const searchTimeoutRef = useRef(null);
 
-  // Debounce search query
-  useEffect(() => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    searchTimeoutRef.current = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 500); // Wait 500ms after user stops typing
-
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, [searchQuery]);
-
+  // Fetch all needs once
   const fetchNeeds = async (isRefresh = false) => {
     try {
       if (isRefresh) {
@@ -38,19 +22,10 @@ const NeedList = () => {
       }
       setError("");
 
-      // Build query params
-      const params = new URLSearchParams();
-      if (debouncedSearchQuery.trim()) {
-        params.append('search', debouncedSearchQuery.trim());
-      }
-      if (filterStatus !== 'all') {
-        params.append('status', filterStatus);
-      }
-
-      const response = await axios.get(`/api/needs?${params.toString()}`);
+      const response = await axios.get(`/api/needs`);
 
       if (response.data.success) {
-        setNeeds(response.data.data);
+        setAllNeeds(response.data.data);
       } else {
         setError("Failed to load needs");
       }
@@ -66,9 +41,43 @@ const NeedList = () => {
     }
   };
 
+  // Client-side filtering
+  useEffect(() => {
+    let result = [...allNeeds];
+
+    // Filter by status
+    if (filterStatus === 'urgent') {
+      result = result.filter(need => !need.supplied);
+    } else if (filterStatus === 'supplied') {
+      result = result.filter(need => need.supplied);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(need => 
+        need.location?.toLowerCase().includes(query) ||
+        need.name?.toLowerCase().includes(query) ||
+        need.description?.toLowerCase().includes(query) ||
+        need.items?.some(item => item.name.toLowerCase().includes(query))
+      );
+    }
+
+    // Sort: urgent first, then by date
+    result.sort((a, b) => {
+      if (a.supplied !== b.supplied) {
+        return a.supplied ? 1 : -1;
+      }
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    setFilteredNeeds(result);
+  }, [allNeeds, searchQuery, filterStatus]);
+
+  // Initial fetch
   useEffect(() => {
     fetchNeeds();
-  }, [debouncedSearchQuery, filterStatus]);
+  }, []);
 
   const handleRefresh = () => {
     fetchNeeds(true);
@@ -97,7 +106,7 @@ const NeedList = () => {
     );
   }
 
-  if (error && needs.length === 0) {
+  if (error && allNeeds.length === 0) {
     return (
       <div className="w-full max-w-3xl mx-auto p-4">
         <div className="bg-gradient-to-br from-red-50 to-red-100/50 border border-red-200 rounded-2xl p-8 text-center">
@@ -130,9 +139,12 @@ const NeedList = () => {
           <h2 className="text-3xl font-bold text-gray-900">
             Relief Needs
           </h2>
-          {needs.length > 0 && (
+          {filteredNeeds.length > 0 && (
             <p className="text-gray-500 mt-1">
-              <span className="font-semibold text-blue-600">{needs.length}</span> {needs.length === 1 ? 'request' : 'requests'} found
+              <span className="font-semibold text-blue-600">{filteredNeeds.length}</span> {filteredNeeds.length === 1 ? 'request' : 'requests'} found
+              {(searchQuery || filterStatus !== 'all') && allNeeds.length !== filteredNeeds.length && (
+                <span className="text-gray-400"> (filtered from {allNeeds.length})</span>
+              )}
             </p>
           )}
         </div>
@@ -172,7 +184,7 @@ const NeedList = () => {
             type="text"
             value={searchQuery}
             onChange={handleSearch}
-            placeholder="Search by location..."
+            placeholder="Search by location, name, items..."
             className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors"
           />
           <svg 
@@ -192,12 +204,6 @@ const NeedList = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-          )}
-          {/* Searching indicator */}
-          {searchQuery !== debouncedSearchQuery && (
-            <div className="absolute right-12 top-1/2 -translate-y-1/2">
-              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
           )}
         </div>
 
@@ -254,7 +260,7 @@ const NeedList = () => {
       </div>
 
       {/* Error Message (if any while data exists) */}
-      {error && needs.length > 0 && (
+      {error && allNeeds.length > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-5 py-4 rounded-xl mb-6 flex items-start gap-3">
           <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -264,7 +270,7 @@ const NeedList = () => {
       )}
 
       {/* Needs List */}
-      {needs.length === 0 ? (
+      {filteredNeeds.length === 0 ? (
         <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 border-2 border-dashed border-gray-200 rounded-2xl p-12 text-center">
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg
@@ -298,7 +304,7 @@ const NeedList = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {needs.map((need, index) => (
+          {filteredNeeds.map((need, index) => (
             <div
               key={need._id}
               className="animate-fadeIn"
