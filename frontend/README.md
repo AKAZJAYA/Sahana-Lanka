@@ -1,16 +1,102 @@
-# React + Vite
+# Sahana Lanka 🇱🇰
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A mobile-first web application designed to help displaced people in Sri Lanka post their immediate needs during and after floods. The platform connects those affected by natural disasters with communities and organizations that can provide assistance.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Frontend**: React 19 with Vite, Tailwind CSS v4
+- **Backend**: Node.js with Express 5
+- **Database**: MongoDB with Mongoose
+- **HTTP Client**: Axios
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Prerequisites
 
-## Expanding the ESLint configuration
+- Node.js (v16 or higher)
+- MongoDB instance (local or cloud-based like MongoDB Atlas)
+- npm or yarn package manager
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd sahana-lanka
+   ```
+
+2. **Install Backend Dependencies**
+   ```bash
+   cd backend
+   npm install
+   ```
+
+3. **Install Frontend Dependencies**
+   ```bash
+   cd ../frontend
+   npm install
+   ```
+
+### Configuration
+
+Create a `.env` file in the [`backend`](backend) directory with the following variables:
+
+```env
+MONGODB_URI=your_mongodb_connection_string
+PORT=5000
+```
+
+### Running the Application
+
+1. **Start the Backend Server**
+   ```bash
+   cd backend
+   npm run dev
+   ```
+   The backend will run on `http://localhost:5000` (or your specified PORT) with hot-reloading via nodemon.
+
+2. **Start the Frontend Development Server**
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+   The frontend will run on `http://localhost:5173` with Vite's fast HMR.
+
+### Building for Production
+
+**Frontend**
+```bash
+cd frontend
+npm run build
+```
+
+## Project Structure
+
+```
+sahana-lanka/
+├── backend/              # Express.js API server
+│   ├── package.json     # Backend dependencies
+│   └── ...
+│
+└── frontend/            # React application
+    ├── src/
+    │   ├── App.jsx      # Main application component
+    │   ├── main.jsx     # Application entry point
+    │   └── assets/      # Images and static assets
+    ├── public/          # Public static files
+    ├── index.html       # HTML template
+    ├── vite.config.js   # Vite configuration
+    └── package.json     # Frontend dependencies
+```
+
+## Contributing
+
+We welcome contributions! Feel free to submit issues and pull requests to help improve Sahana Lanka.
+
+## License
+
+ISC
+
+---
+
+Built with ❤️ to help communities in need
