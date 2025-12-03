@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import NeedCard from "./NeedCard";
 
 const NeedList = () => {
-  const [needs, setNeeds] = useState([]);
+  const [allNeeds, setAllNeeds] = useState([]); // Store all fetched needs
+  const [filteredNeeds, setFilteredNeeds] = useState([]); // Display filtered needs
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const searchTimeoutRef = useRef(null);
 
+  // Fetch all needs once
   const fetchNeeds = async (isRefresh = false) => {
     try {
       if (isRefresh) {
@@ -17,10 +22,10 @@ const NeedList = () => {
       }
       setError("");
 
-      const response = await axios.get("/api/needs");
+      const response = await axios.get(`/api/needs`);
 
       if (response.data.success) {
-        setNeeds(response.data.data);
+        setAllNeeds(response.data.data);
       } else {
         setError("Failed to load needs");
       }
@@ -36,12 +41,54 @@ const NeedList = () => {
     }
   };
 
+  // Client-side filtering
+  useEffect(() => {
+    let result = [...allNeeds];
+
+    // Filter by status
+    if (filterStatus === 'urgent') {
+      result = result.filter(need => !need.supplied);
+    } else if (filterStatus === 'supplied') {
+      result = result.filter(need => need.supplied);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(need => 
+        need.location?.toLowerCase().includes(query) ||
+        need.name?.toLowerCase().includes(query) ||
+        need.description?.toLowerCase().includes(query) ||
+        need.items?.some(item => item.name.toLowerCase().includes(query))
+      );
+    }
+
+    // Sort: urgent first, then by date
+    result.sort((a, b) => {
+      if (a.supplied !== b.supplied) {
+        return a.supplied ? 1 : -1;
+      }
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    setFilteredNeeds(result);
+  }, [allNeeds, searchQuery, filterStatus]);
+
+  // Initial fetch
   useEffect(() => {
     fetchNeeds();
   }, []);
 
   const handleRefresh = () => {
     fetchNeeds(true);
+  };
+
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleFilterChange = (status) => {
+    setFilterStatus(status);
   };
 
   if (isLoading) {
@@ -59,7 +106,7 @@ const NeedList = () => {
     );
   }
 
-  if (error && needs.length === 0) {
+  if (error && allNeeds.length === 0) {
     return (
       <div className="w-full max-w-3xl mx-auto p-4">
         <div className="bg-gradient-to-br from-red-50 to-red-100/50 border border-red-200 rounded-2xl p-8 text-center">
@@ -87,14 +134,17 @@ const NeedList = () => {
   return (
     <div className="w-full max-w-3xl mx-auto p-4">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">
             Relief Needs
           </h2>
-          {needs.length > 0 && (
+          {filteredNeeds.length > 0 && (
             <p className="text-gray-500 mt-1">
-              <span className="font-semibold text-blue-600">{needs.length}</span> {needs.length === 1 ? 'request' : 'requests'} found
+              <span className="font-semibold text-blue-600">{filteredNeeds.length}</span> {filteredNeeds.length === 1 ? 'request' : 'requests'} found
+              {(searchQuery || filterStatus !== 'all') && allNeeds.length !== filteredNeeds.length && (
+                <span className="text-gray-400"> (filtered from {allNeeds.length})</span>
+              )}
             </p>
           )}
         </div>
@@ -126,8 +176,91 @@ const NeedList = () => {
         </button>
       </div>
 
+      {/* Search and Filter Section */}
+      <div className="mb-6 space-y-4">
+        {/* Search Bar */}
+        <div className="relative">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={handleSearch}
+            placeholder="Search by location, name, items..."
+            className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors"
+          />
+          <svg 
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Filter Buttons */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => handleFilterChange('all')}
+            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+              filterStatus === 'all'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              All Needs
+            </span>
+          </button>
+          
+          <button
+            onClick={() => handleFilterChange('urgent')}
+            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+              filterStatus === 'urgent'
+                ? 'bg-red-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Urgent Only
+            </span>
+          </button>
+          
+          <button
+            onClick={() => handleFilterChange('supplied')}
+            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+              filterStatus === 'supplied'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Supplied
+            </span>
+          </button>
+        </div>
+      </div>
+
       {/* Error Message (if any while data exists) */}
-      {error && needs.length > 0 && (
+      {error && allNeeds.length > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-5 py-4 rounded-xl mb-6 flex items-start gap-3">
           <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -137,7 +270,7 @@ const NeedList = () => {
       )}
 
       {/* Needs List */}
-      {needs.length === 0 ? (
+      {filteredNeeds.length === 0 ? (
         <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 border-2 border-dashed border-gray-200 rounded-2xl p-12 text-center">
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg
@@ -155,25 +288,29 @@ const NeedList = () => {
             </svg>
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-2">
-            No needs posted yet
+            {searchQuery || filterStatus !== 'all' ? 'No matching needs found' : 'No needs posted yet'}
           </h3>
-          <p className="text-gray-500 mb-6">Be the first to post a relief need and help your community</p>
+          <p className="text-gray-500 mb-6">
+            {searchQuery || filterStatus !== 'all' 
+              ? 'Try adjusting your search or filter criteria' 
+              : 'Be the first to post a relief need and help your community'}
+          </p>
           <div className="inline-flex items-center gap-2 text-sm text-gray-400">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>Click "Report Need" to get started</span>
+            <span>{searchQuery || filterStatus !== 'all' ? 'Clear filters to see all needs' : 'Click "Report Need" to get started'}</span>
           </div>
         </div>
       ) : (
         <div className="space-y-4">
-          {needs.map((need, index) => (
+          {filteredNeeds.map((need, index) => (
             <div
               key={need._id}
               className="animate-fadeIn"
               style={{ animationDelay: `${index * 50}ms` }}
             >
-              <NeedCard need={need} />
+              <NeedCard need={need} onSupplied={fetchNeeds} />
             </div>
           ))}
         </div>

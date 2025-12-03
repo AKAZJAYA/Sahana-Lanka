@@ -1,32 +1,47 @@
-const express = require('express');
-const Need = require('../models/Need');
+const express = require("express");
+const Need = require("../models/Need");
 
 const router = express.Router();
 
-// GET /api/needs - Get 100 most recent needs
-router.get('/', async (req, res) => {
+// GET /api/needs - Get 100 most recent needs with search and filter
+router.get("/", async (req, res) => {
   try {
-    const needs = await Need.find()
-      .sort({ createdAt: -1 })
+    const { search, status } = req.query;
+    let query = {};
+
+    // Search by location
+    if (search && search.trim()) {
+      query.location = { $regex: search.trim(), $options: "i" };
+    }
+
+    // Filter by status
+    if (status === "urgent") {
+      query.supplied = false;
+    } else if (status === "supplied") {
+      query.supplied = true;
+    }
+
+    const needs = await Need.find(query)
+      .sort({ supplied: 1, createdAt: -1 }) // Urgent (not supplied) first, then by date
       .limit(100);
-    
+
     res.json({
       success: true,
       count: needs.length,
-      data: needs
+      data: needs,
     });
   } catch (error) {
-    console.error('Error fetching needs:', error);
+    console.error("Error fetching needs:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch needs',
-      error: error.message
+      message: "Failed to fetch needs",
+      error: error.message,
     });
   }
 });
 
 // POST /api/needs - Create a new need
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { items } = req.body;
 
@@ -34,7 +49,7 @@ router.post('/', async (req, res) => {
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'At least one item is required'
+        message: "At least one item is required",
       });
     }
 
@@ -43,7 +58,7 @@ router.post('/', async (req, res) => {
       if (!item.name || !item.quantity) {
         return res.status(400).json({
           success: false,
-          message: 'Each item must have a name and quantity'
+          message: "Each item must have a name and quantity",
         });
       }
     }
@@ -53,31 +68,73 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Need created successfully',
-      data: savedNeed
+      message: "Need created successfully",
+      data: savedNeed,
     });
   } catch (error) {
-    console.error('Error creating need:', error);
-    
+    console.error("Error creating need:", error);
+
     // Handle validation errors
-    if (error.name === 'ValidationError') {
+    if (error.name === "ValidationError") {
       return res.status(400).json({
         success: false,
-        message: 'Validation error',
-        errors: Object.values(error.errors).map(err => err.message)
+        message: "Validation error",
+        errors: Object.values(error.errors).map((err) => err.message),
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Failed to create need',
-      error: error.message
+      message: "Failed to create need",
+      error: error.message,
+    });
+  }
+});
+
+// PATCH /api/needs/:id/supply - Mark a need as supplied
+router.patch("/:id/supply", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const updatedNeed = await Need.findByIdAndUpdate(
+      id,
+      { supplied: true },
+      { new: true }
+    );
+
+    if (!updatedNeed) {
+      return res.status(404).json({
+        success: false,
+        message: "Need not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Need marked as supplied",
+      data: updatedNeed,
+    });
+  } catch (error) {
+    console.error("Error marking need as supplied:", error);
+
+    // Handle invalid ObjectId format
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid need ID format",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to mark need as supplied",
+      error: error.message,
     });
   }
 });
 
 // DELETE /api/needs/:id - Delete a need by ID
-router.delete('/:id', async (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -86,30 +143,30 @@ router.delete('/:id', async (req, res) => {
     if (!deletedNeed) {
       return res.status(404).json({
         success: false,
-        message: 'Need not found'
+        message: "Need not found",
       });
     }
 
     res.json({
       success: true,
-      message: 'Need deleted successfully',
-      data: deletedNeed
+      message: "Need deleted successfully",
+      data: deletedNeed,
     });
   } catch (error) {
-    console.error('Error deleting need:', error);
-    
+    console.error("Error deleting need:", error);
+
     // Handle invalid ObjectId format
-    if (error.name === 'CastError') {
+    if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
-        message: 'Invalid need ID format'
+        message: "Invalid need ID format",
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Failed to delete need',
-      error: error.message
+      message: "Failed to delete need",
+      error: error.message,
     });
   }
 });
