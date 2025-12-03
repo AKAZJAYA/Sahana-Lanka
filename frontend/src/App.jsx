@@ -7,7 +7,7 @@ import floodReliefImage from "/header.png";
 
 // Configure axios base URL
 axios.defaults.baseURL =
-  import.meta.env.VITE_API_URL || "74.220.56.0/24";
+  import.meta.env.VITE_API_URL || "http://74.220.56.0/24";
 
 const App = () => {
   const [activeTab, setActiveTab] = useState("view");
