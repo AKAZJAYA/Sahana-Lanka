@@ -48,7 +48,7 @@ const needsRouter = require("./routes/needs");
 app.use("/api/needs", needsRouter);
 
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 const startServer = async () => {
   try {
